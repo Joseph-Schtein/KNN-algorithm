@@ -10,12 +10,12 @@ def run_hc():
     df = pd.read_csv(path, sep='   ' or '    ', engine='python', names=CSV_COLUMN_NAMES, header=0)
     df = df.replace({'Gender': {2: 0}})
     results_list = np.zeros(shape=(5, 3))
-    for i in range(50):
+    for i in range(500):
         results_list += algorithm(df, 'BodyTemp', 'Weight', 'Gender')
 
     for i in range(5):
         for j in range(3):
-            results_list[i][j] = results_list[i][j]/50
+            results_list[i][j] = results_list[i][j] / 500
 
     return results_list
 
@@ -45,83 +45,151 @@ def algorithm(df, x, y, label):
         value_closer_p2 = np.zeros(shape=(k, 3))
         value_closer_infinity = np.zeros(shape=(k, 3))
 
-        for i in range(64): # Passing on all the test data for the algorithm
+        for i in range(64):  # Passing on all the test data for the algorithm
             dot_x = test_values_x[i]
             dot_y = test_values_y[i]
-            label = train_labels[i]
             initialize = True
-            for j in range(64): # Comput the distance according to l1, l2 and l-infinity over all the train values
+            for j in range(64):  # Comput the distance according to l1, l2 and l-infinity over all the train values
                 tmp_distance_for_p1 = abs(dot_x - train_values_x[j]) + abs(dot_y - train_values_y[j])
-                tmp_distance_for_p2 = math.sqrt(math.pow(dot_x - train_values_x[j], 2) + math.pow(dot_y - train_values_y[j], 2))
+                tmp_distance_for_p2 = math.sqrt(
+                    math.pow(dot_x - train_values_x[j], 2) + math.pow(dot_y - train_values_y[j], 2))
                 tmp_distance_for_infinity = max(abs(dot_x - train_values_x[j]), abs(dot_y - train_values_y[j]))
 
-                tmp_dot = np.zeros(shape=3)
+                tmp_distance_for_p1 = int(tmp_distance_for_p1 * 10000) / 10000
+                tmp_distance_for_p2 = int(tmp_distance_for_p2 * 10000) / 10000
+                tmp_distance_for_infinity = int(tmp_distance_for_infinity * 10000) / 10000
 
                 if not initialize:
-                    for r in range(k):
-                        if manh_dis[r] > tmp_distance_for_p1:
-                            tmp_variable = manh_dis[r]
-                            manh_dis[r] = tmp_distance_for_p1
-                            tmp_distance_for_p1 = tmp_variable
+                    r = k - 1
+                    if r != 0:
+                        while r >= 0 and manh_dis[r] > tmp_distance_for_p1:
+                            if r != k-1:
+                                manh_dis[r + 1] = manh_dis[r]
+                                value_closer_p1[r+1] = value_closer_p1[r]
+                            r = r-1
 
-                            tmp_dot = value_closer_p1[r]
-                            value_closer_p1[r][0] = dot_x
-                            value_closer_p1[r][1] = dot_y
-                            value_closer_p1[r][2] = label
-                            #if r+1 < k:
-                            #    value_closer_p1[r+1] = tmp_dot
+                        if r != k-1:
+                            manh_dis[r + 1] = tmp_distance_for_p1
+                            value_closer_p1[r+1][0] = train_values_x[j]
+                            value_closer_p1[r+1][1] = train_values_y[j]
+                            value_closer_p1[r+1][2] = train_labels[j]
+
+                    elif manh_dis[0] > tmp_distance_for_p1 and k == 1:
+                        manh_dis[0] = tmp_distance_for_p1
+                        value_closer_p1[0][0] = train_values_x[j]
+                        value_closer_p1[0][1] = train_values_y[j]
+                        value_closer_p1[0][2] = train_labels[j]
 
                 else:
-                    manh_dis[j] = tmp_distance_for_p1
-                    value_closer_p1[j][0] = dot_x
-                    value_closer_p1[j][1] = dot_y
-                    value_closer_p1[j][2] = label
+                    if k == 1 or j == 0:
+                        manh_dis[j] = tmp_distance_for_p1
+                        value_closer_p1[j][0] = train_values_x[j]
+                        value_closer_p1[j][1] = train_values_y[j]
+                        value_closer_p1[j][2] = train_labels[j]
 
-                tmp_dot = np.zeros(shape=3)
+                    else:
+                        t = k - 1
+
+                        while t >= 0 and (manh_dis[t] > tmp_distance_for_p1 or manh_dis[t] == 0):
+                            if manh_dis[t] != 0 and t != k - 1:
+                                manh_dis[t + 1] = manh_dis[t]
+                                value_closer_p1[t+1] = value_closer_p1[t]
+                            t = t - 1
+
+                        if t != k - 1:
+                            manh_dis[t + 1] = tmp_distance_for_p1
+                            value_closer_p1[t+1][0] = train_values_x[j]
+                            value_closer_p1[t+1][1] = train_values_y[j]
+                            value_closer_p1[t+1][2] = train_labels[j]
+
 
                 if not initialize:
-                    for r in range(k):
-                        if euc_dis[r] > tmp_distance_for_p2:
-                            tmp_variable = euc_dis[r]
-                            euc_dis[r] = tmp_distance_for_p2
-                            tmp_distance_for_p2 = tmp_variable
+                    r = k - 1
+                    if r != 0:
+                        while r >= 0 and euc_dis[r] > tmp_distance_for_p2:
+                            if r != k - 1:
+                                euc_dis[r + 1] = euc_dis[r]
+                                value_closer_p2[r + 1] = value_closer_p2[r]
+                            r = r - 1
 
-                            tmp_dot = value_closer_p2[r]
-                            value_closer_p2[r][0] = dot_x
-                            value_closer_p2[r][1] = dot_y
-                            value_closer_p2[r][2] = label
-                            if r + 1 < k:
-                                value_closer_p2[r + 1] = tmp_dot
+                        if r != k - 1:
+                            euc_dis[r + 1] = tmp_distance_for_p2
+                            value_closer_p2[r+1][0] = train_values_x[j]
+                            value_closer_p2[r+1][1] = train_values_y[j]
+                            value_closer_p2[r+1][2] = train_labels[j]
+
+                    elif euc_dis[0] > tmp_distance_for_p2:
+                        euc_dis[0] = tmp_distance_for_p2
+                        value_closer_p2[0][0] = train_values_x[j]
+                        value_closer_p2[0][1] = train_values_y[j]
+                        value_closer_p2[0][2] = train_labels[j]
 
                 else:
-                    euc_dis[j] = tmp_distance_for_p2
-                    value_closer_p2[j][0] = dot_x
-                    value_closer_p2[j][1] = dot_y
-                    value_closer_p2[j][2] = label
+                    if k == 1 or j == 0:
+                        euc_dis[j] = tmp_distance_for_p2
+                        value_closer_p2[j][0] = train_values_x[j]
+                        value_closer_p2[j][1] = train_values_y[j]
+                        value_closer_p2[j][2] = train_labels[j]
 
-                tmp_dot = np.zeros(shape=3)
+                    else:
+                        t = k - 1
+
+                        while t >= 0 and (euc_dis[t] > tmp_distance_for_p2 or euc_dis[t] == 0):
+                            if euc_dis[t] != 0 and t != k - 1:
+                                euc_dis[t + 1] = euc_dis[t]
+                                value_closer_p2[t + 1] = value_closer_p2[t]
+                            t = t - 1
+
+                        if t != k - 1:
+                            euc_dis[t + 1] = tmp_distance_for_p2
+                            value_closer_p2[t + 1][0] = train_values_x[j]
+                            value_closer_p2[t + 1][1] = train_values_y[j]
+                            value_closer_p2[t + 1][2] = train_labels[j]
 
                 if not initialize:
-                    for r in range(k):
-                        if infinity_dis[r] > tmp_distance_for_infinity:
-                            tmp_variable = infinity_dis[r]
-                            infinity_dis[r] = tmp_distance_for_infinity
-                            tmp_distance_for_infinity = tmp_variable
+                    r = k - 1
+                    if r != 0:
+                        while r >= 0 and infinity_dis[r] > tmp_distance_for_infinity:
+                            if r != k - 1:
+                                infinity_dis[r + 1] = infinity_dis[r]
+                                value_closer_infinity[r + 1] = value_closer_infinity[r]
+                            r = r - 1
 
-                            tmp_dot = value_closer_infinity[r]
-                            value_closer_infinity[r][0] = dot_x
-                            value_closer_infinity[r][1] = dot_y
-                            value_closer_infinity[r][2] = label
-                            if r + 1 < k:
-                                value_closer_infinity[r + 1] = tmp_dot
+                        if r != k - 1:
+                            infinity_dis[r + 1] = tmp_distance_for_infinity
+                            value_closer_infinity[r+1][0] = train_values_x[j]
+                            value_closer_infinity[r+1][1] = train_values_y[j]
+                            value_closer_infinity[r+1][2] = train_labels[j]
+
+                    elif infinity_dis[0] > tmp_distance_for_infinity:
+                        infinity_dis[0] = tmp_distance_for_infinity
+                        value_closer_infinity[0][0] = train_values_x[j]
+                        value_closer_infinity[0][1] = train_values_y[j]
+                        value_closer_infinity[0][2] = train_labels[j]
 
                 else:
-                    infinity_dis[j] = tmp_distance_for_infinity
-                    value_closer_infinity[j][0] = dot_x
-                    value_closer_infinity[j][1] = dot_y
-                    value_closer_infinity[j][2] = label
+                    if k == 1 or j == 0:
+                        infinity_dis[j] = tmp_distance_for_infinity
+                        value_closer_infinity[j][0] = train_values_x[j]
+                        value_closer_infinity[j][1] = train_values_y[j]
+                        value_closer_infinity[j][2] = train_labels[j]
 
-                if k == j+1:
+                    else:
+                        t = k - 1
+
+                        while t >= 0 and (infinity_dis[t] > tmp_distance_for_infinity or infinity_dis[t] == 0):
+                            if infinity_dis[t] != 0 and t != k - 1:
+                                infinity_dis[t + 1] = infinity_dis[t]
+                                value_closer_infinity[t + 1] = value_closer_infinity[t]
+                            t = t - 1
+
+                        if t != k - 1:
+                            infinity_dis[t + 1] = tmp_distance_for_infinity
+                            value_closer_infinity[t + 1][0] = train_values_x[j]
+                            value_closer_infinity[t + 1][1] = train_values_y[j]
+                            value_closer_infinity[t + 1][2] = train_labels[j]
+
+                if k == j + 1:
                     initialize = False
 
             zeros_p1 = 0
@@ -134,7 +202,7 @@ def algorithm(df, x, y, label):
             for j in range(k):  # Label the dot
 
                 if value_closer_p1[j][2] == 0:
-                    zeros_p1 = zeros_p1+1
+                    zeros_p1 = zeros_p1 + 1
 
                 else:
                     ones_p1 = ones_p1 + 1
@@ -187,7 +255,7 @@ def algorithm(df, x, y, label):
         output[index][0] = mistake_p1 / 65
         output[index][1] = mistake_p2 / 65
         output[index][2] = mistake_infinity / 65
-        index = index+1
+        index = index + 1
 
     return output
 
@@ -199,6 +267,7 @@ def main():
     print(results[2][0], ' ', results[2][1], ' ', results[2][2])
     print(results[3][0], ' ', results[3][1], ' ', results[3][2])
     print(results[4][0], ' ', results[4][1], ' ', results[4][2])
+
 
 if __name__ == '__main__':
     main()
