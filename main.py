@@ -4,8 +4,9 @@ import math
 from sklearn.model_selection import train_test_split
 
 
-def run_hc():
-    path = r'C:\Users\yossi\OneDrive\Documents\machine_learning\Assignment_3\HC_Body_Temperature.txt'
+def run_hc(file):
+    #path = r'C:\Users\yossi\OneDrive\Documents\machine_learning\Assignment_3\HC_Body_Temperature.txt'
+    path = file
     CSV_COLUMN_NAMES = ['BodyTemp', 'Gender', 'Weight']
     df = pd.read_csv(path, sep='   ' or '    ', engine='python', names=CSV_COLUMN_NAMES, header=0)
     df = df.replace({'Gender': {2: 0}})
@@ -38,6 +39,7 @@ def run_hc():
         tmp = tmp + 1
         for j in range(3):
             print("for p = ", j + 1, " ", test_results_list[i][j])
+        print("\n")
 
     return train_results_list, test_results_list
 
@@ -282,7 +284,8 @@ def algorithm(train, test, x, y, label):
 
 
 def main():
-    results = run_hc()
+    path = input("insert please the path: " )
+    results = run_hc(path)
 
 
 if __name__ == '__main__':
