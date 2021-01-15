@@ -9,20 +9,40 @@ def run_hc():
     CSV_COLUMN_NAMES = ['BodyTemp', 'Gender', 'Weight']
     df = pd.read_csv(path, sep='   ' or '    ', engine='python', names=CSV_COLUMN_NAMES, header=0)
     df = df.replace({'Gender': {2: 0}})
-    results_list = np.zeros(shape=(5, 3))
+    train_results_list = np.zeros(shape=(5, 3))
+    test_results_list = np.zeros(shape=(5, 3))
+
     for i in range(500):
-        results_list += algorithm(df, 'BodyTemp', 'Weight', 'Gender')
+        train, test = train_test_split(df, test_size=0.500)
+        train_results_list += algorithm(train, train, 'BodyTemp', 'Weight', 'Gender')  # Empirical error
+        test_results_list += algorithm(train, test, 'BodyTemp', 'Weight', 'Gender') # Test error
 
     for i in range(5):
         for j in range(3):
-            results_list[i][j] = results_list[i][j] / 500
+            train_results_list[i][j] = train_results_list[i][j] / 500
+            test_results_list[i][j] = test_results_list[i][j] / 500
 
-    return results_list
+    tmp = 1
+    print("train error")
+    for i in range(5):
+        print("for k = ", i + tmp)
+        tmp = tmp + 1
+        for j in range(3):
+            print("for p = ", j + 1, " ", train_results_list[i][j])
+        print("\n")
+
+    tmp = 1
+    print("test error\n\n")
+    for i in range(5):
+        print("for k = ", i + tmp)
+        tmp = tmp + 1
+        for j in range(3):
+            print("for p = ", j + 1, " ", test_results_list[i][j])
+
+    return train_results_list, test_results_list
 
 
-def algorithm(df, x, y, label):
-    train, test = train_test_split(df, test_size=0.500)
-
+def algorithm(train, test, x, y, label):
     train_values_x = list(train[x])
     train_values_y = list(train[y])
     test_values_x = list(test[x])
@@ -46,9 +66,11 @@ def algorithm(df, x, y, label):
         value_closer_infinity = np.zeros(shape=(k, 3))
 
         for i in range(64):  # Passing on all the test data for the algorithm
+
             dot_x = test_values_x[i]
             dot_y = test_values_y[i]
             initialize = True
+
             for j in range(64):  # Comput the distance according to l1, l2 and l-infinity over all the train values
                 tmp_distance_for_p1 = abs(dot_x - train_values_x[j]) + abs(dot_y - train_values_y[j])
                 tmp_distance_for_p2 = math.sqrt(
@@ -63,16 +85,16 @@ def algorithm(df, x, y, label):
                     r = k - 1
                     if r != 0:
                         while r >= 0 and manh_dis[r] > tmp_distance_for_p1:
-                            if r != k-1:
+                            if r != k - 1:
                                 manh_dis[r + 1] = manh_dis[r]
-                                value_closer_p1[r+1] = value_closer_p1[r]
-                            r = r-1
+                                value_closer_p1[r + 1] = value_closer_p1[r]
+                            r = r - 1
 
-                        if r != k-1:
+                        if r != k - 1:
                             manh_dis[r + 1] = tmp_distance_for_p1
-                            value_closer_p1[r+1][0] = train_values_x[j]
-                            value_closer_p1[r+1][1] = train_values_y[j]
-                            value_closer_p1[r+1][2] = train_labels[j]
+                            value_closer_p1[r + 1][0] = train_values_x[j]
+                            value_closer_p1[r + 1][1] = train_values_y[j]
+                            value_closer_p1[r + 1][2] = train_labels[j]
 
                     elif manh_dis[0] > tmp_distance_for_p1 and k == 1:
                         manh_dis[0] = tmp_distance_for_p1
@@ -93,15 +115,14 @@ def algorithm(df, x, y, label):
                         while t >= 0 and (manh_dis[t] > tmp_distance_for_p1 or manh_dis[t] == 0):
                             if manh_dis[t] != 0 and t != k - 1:
                                 manh_dis[t + 1] = manh_dis[t]
-                                value_closer_p1[t+1] = value_closer_p1[t]
+                                value_closer_p1[t + 1] = value_closer_p1[t]
                             t = t - 1
 
                         if t != k - 1:
                             manh_dis[t + 1] = tmp_distance_for_p1
-                            value_closer_p1[t+1][0] = train_values_x[j]
-                            value_closer_p1[t+1][1] = train_values_y[j]
-                            value_closer_p1[t+1][2] = train_labels[j]
-
+                            value_closer_p1[t + 1][0] = train_values_x[j]
+                            value_closer_p1[t + 1][1] = train_values_y[j]
+                            value_closer_p1[t + 1][2] = train_labels[j]
 
                 if not initialize:
                     r = k - 1
@@ -114,9 +135,9 @@ def algorithm(df, x, y, label):
 
                         if r != k - 1:
                             euc_dis[r + 1] = tmp_distance_for_p2
-                            value_closer_p2[r+1][0] = train_values_x[j]
-                            value_closer_p2[r+1][1] = train_values_y[j]
-                            value_closer_p2[r+1][2] = train_labels[j]
+                            value_closer_p2[r + 1][0] = train_values_x[j]
+                            value_closer_p2[r + 1][1] = train_values_y[j]
+                            value_closer_p2[r + 1][2] = train_labels[j]
 
                     elif euc_dis[0] > tmp_distance_for_p2:
                         euc_dis[0] = tmp_distance_for_p2
@@ -157,9 +178,9 @@ def algorithm(df, x, y, label):
 
                         if r != k - 1:
                             infinity_dis[r + 1] = tmp_distance_for_infinity
-                            value_closer_infinity[r+1][0] = train_values_x[j]
-                            value_closer_infinity[r+1][1] = train_values_y[j]
-                            value_closer_infinity[r+1][2] = train_labels[j]
+                            value_closer_infinity[r + 1][0] = train_values_x[j]
+                            value_closer_infinity[r + 1][1] = train_values_y[j]
+                            value_closer_infinity[r + 1][2] = train_labels[j]
 
                     elif infinity_dis[0] > tmp_distance_for_infinity:
                         infinity_dis[0] = tmp_distance_for_infinity
@@ -241,7 +262,7 @@ def algorithm(df, x, y, label):
         mistake_p2 = 0
         mistake_infinity = 0
 
-        for i in range(65):
+        for i in range(64):
 
             if test_labels[i] != test_prediction_p1[i]:
                 mistake_p1 = mistake_p1 + 1
@@ -262,11 +283,6 @@ def algorithm(df, x, y, label):
 
 def main():
     results = run_hc()
-    print(results[0][0], ' ', results[0][1], ' ', results[0][2])
-    print(results[1][0], ' ', results[1][1], ' ', results[1][2])
-    print(results[2][0], ' ', results[2][1], ' ', results[2][2])
-    print(results[3][0], ' ', results[3][1], ' ', results[3][2])
-    print(results[4][0], ' ', results[4][1], ' ', results[4][2])
 
 
 if __name__ == '__main__':
